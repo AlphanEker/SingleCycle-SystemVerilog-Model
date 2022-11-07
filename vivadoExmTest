@@ -52,3 +52,43 @@ module test();
         clk = 1; sl1 = 1; sl0 = 1; I3 = 0; I2 = 0; I1 = 0; I0 = 1; shr_in = 1; shl_in = 1; #40;
     end
 endmodule
+
+
+########################################
+module aludec (input    logic[5:0] funct,
+               input    logic[1:0] aluop,
+               output   logic[2:0] alucontrol);
+  always_comb
+    case(aluop)
+      2'b00: alucontrol  = 3'b010;  // add  (for lw/sw/addi)
+      2'b01: alucontrol  = 3'b110;  // sub   (for beq)
+      default: case(funct)          // R-TYPE instructions
+          6'b100000: alucontrol  = 3'b010; // ADD
+          6'b100010: alucontrol  = 3'b110; // SUB
+          6'b100100: alucontrol  = 3'b000; // AND
+          6'b100101: alucontrol  = 3'b001; // OR
+          6'b101010: alucontrol  = 3'b111; // SLT
+          6'b101011: alucontrol  = 3'b011; // LS
+          default:   alucontrol  = 3'bxxx; // ???
+        endcase
+    endcase
+endmodule
+########################################
+module alu(input  logic [31:0] a, b, 
+           input  logic [2:0]  alucont, 
+           output logic [31:0] result,
+           output logic zero);
+    
+    always_comb
+        case(alucont)
+            3'b010: result = a + b;
+            3'b110: result = a - b;
+            3'b000: result = a & b;
+            3'b001: result = a | b;
+            3'b111: result = (a < b) ? 1 : 0;
+            3'b011: result = a << b;
+            default: result = {32{1'bx}};
+        endcase
+    
+    assign zero = (result == 0) ? 1'b1 : 1'b0;
+endmodule
